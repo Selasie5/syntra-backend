@@ -1,7 +1,6 @@
-export const listenerAgent = async (message: string) => {
-  if (message.includes("blocked")) {
-    return "It seems this task might be blocked. Want me to escalate?";
-  }
+import { AgentEvent } from "../types/agent";
 
-  return null;
+export const handleListenerEvent = async (event: AgentEvent) => {
+  console.log("[Listener Agent] Received:", event);
+  // Simulate forwarding to detection
 };
