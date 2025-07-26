@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon --watch src --exec tsx src/index.ts",
+    "build": "tsc",
+    "dev": "nodemon --watch src --exec tsx src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,10 +14,22 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@types/express": "^5.0.3",
+    "@langchain/community": "^0.3.49",
+    "@langchain/core": "^0.3.66",
+    "@langchain/langgraph": "^0.3.11",
+    "@langchain/openai": "^0.6.3",
+    "@supabase/supabase-js": "^2.52.1",
     "@types/nodemon": "^1.19.6",
+    "chromadb": "^3.0.10",
     "express": "^5.1.0",
     "nodemon": "^3.1.10",
-    "tsx": "^4.20.3"
+    "tsx": "^4.20.3",
+    "weaviate-client": "^3.8.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
