@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button id="slack">Send Slack Test</button>
+<script>
+async function sendSlack() {
+  const body = { user:'alice', text:'How do I deploy?' };
+  // If signature required, precompute via backend helper; otherwise omit header.
+  const res = await fetch('/api/slack', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(body)
+  });
+  console.log(await res.json());
+}
+document.getElementById('slack').onclick = sendSlack;
+</script>
+</body>
+</html>

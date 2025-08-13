@@ -1,18 +1,18 @@
-import { getMemoryCollection} from "../data/chroma";
-import { embedText } from "../utils/embeddings";
+import { getMemoryCollection } from "../data/memoryStore";
 
 export const storeMemory = async (text: string) => {
-  const embedding = await embedText(text);
   const collection = await getMemoryCollection();
-  await collection.add({
-    ids: [Date.now().toString()],
-    embeddings: [embedding],
-    documents: [text],
-  });
+  const id = await collection.add(text);
+  console.log(`Stored memory with id: ${id}`);
+  return id;
 };
 
 export const retrieveMemory = async (query: string) => {
-  const embedding = await embedText(query);
   const collection = await getMemoryCollection();
-  return await collection.query({ queryEmbeddings: [embedding], nResults: 3 });
+  const results = await collection.search(query, 3);
+  return {
+    documents: results.map(r => r.text),
+    ids: results.map(r => r.id),
+    metadatas: results.map(r => r.metadata || {})
+  };
 };
