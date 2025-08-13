@@ -1,4 +1,7 @@
-export const handleEscalation = async (issue:any) => {
+import { logResolution } from "../utils/chaosFeed";
+
+export const handleEscalation = async (issue: any) => {
   console.log("[Escalation Agent] Escalating:", issue);
-  // Placeholder: notify human, create Notion doc, etc.
+  logResolution(`Escalated issue for signal ${issue?.signal?.type}`);
+  // Future: integrate PagerDuty / email / Slack channel alert
 };
