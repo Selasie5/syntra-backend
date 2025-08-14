@@ -15,22 +15,42 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.use(cors());
-// Capture raw body for Slack signature verification while still parsing JSON
+// Capture raw body for Slack signature verification for JSON
 app.use(express.json({
   verify: (req: any, _res, buf) => {
     try { req.rawBody = buf.toString("utf8"); } catch { /* noop */ }
   },
 }));
+// Capture raw body for Slack signature verification for urlencoded
+app.use(express.urlencoded({
+  extended: true,
+  verify: (req: any, _res, buf) => {
+    try { req.rawBody = buf.toString("utf8"); } catch { /* noop */ }
+  },
+}));
+// Behind proxies like ngrok, trust the first proxy hop
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 // Rate limit all routes
-const limiter = rateLimit({ windowMs: 60_000, max: 120 });
+const limiter = rateLimit({
+  windowMs: 60_000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Do not rate-limit Slack URL verification & events
+  skip: (req) => req.path?.startsWith?.("/api/slack/events") === true,
+});
 app.use(limiter);
 
 // Simple HMAC signature verification middleware
 const SHARED_SECRET = process.env.INGEST_SECRET;
 const DISABLE_SIG = String(process.env.DISABLE_INGEST_SIGNATURE).toLowerCase() === "true";
 app.use((req, res, next) => {
+  // Bypass for Slack-signed requests (Slack will be verified in its route using X-Slack-Signature)
+  if (req.header("x-slack-signature")) return next();
+  // Optionally bypass for Slack Events path explicitly
+  if (req.path && req.path.startsWith("/api/slack/events")) return next();
   if (DISABLE_SIG) return next(); // disabled explicitly
   if (!SHARED_SECRET) return next(); // disabled when unset
   const signature = req.header("x-syntra-signature");

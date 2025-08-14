@@ -6,7 +6,13 @@ import { getThreadReplyCount, sendSlackNudge } from "../integrations/slack";
 const router = Router();
 
 
-router.post("/", async (req, res) => {
+router.post("/", async (req: any, res) => {
+  // Support Slack Events URL verification if Request URL points to /api/slack
+  if (req.body?.type === "url_verification" && req.body?.challenge) {
+    res.setHeader("Content-Type", "text/plain");
+    return res.status(200).send(String(req.body.challenge));
+  }
+
   const { user, text, channel, ts } = req.body;
 
   const event = {
@@ -37,7 +43,9 @@ router.post("/events", async (req: any, res) => {
 
   // URL verification challenge
   if (req.body?.type === "url_verification" && req.body?.challenge) {
-    return res.send(req.body.challenge);
+    // Reply with the plain challenge string
+    res.setHeader("Content-Type", "text/plain");
+    return res.status(200).send(String(req.body.challenge));
   }
 
   // Verify Slack signature (unless disabled)
@@ -53,6 +61,10 @@ router.post("/events", async (req: any, res) => {
     if (expected !== sig) return res.status(401).end();
   }
 
+  // Acknowledge immediately to satisfy Slack's 3s requirement
+  res.json({ ok: true });
+
+  // Process asynchronously after ack
   const ev = req.body?.event;
   if (ev && ev.type === "message" && ev.channel_type === "channel" && !ev.bot_id) {
     const event = {
@@ -65,9 +77,12 @@ router.post("/events", async (req: any, res) => {
         ts: ev.ts,
       },
     };
-    await handleListenerEvent(event as any);
+    try {
+      await handleListenerEvent(event as any);
+    } catch (e) {
+      // swallow errors; already acked
+    }
   }
-  res.json({ ok: true });
 });
 
 export default router
