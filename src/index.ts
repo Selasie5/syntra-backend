@@ -6,7 +6,7 @@ import crypto from "crypto";
 import slackRoutes from "./routes/slack";
 import notionRoutes from "./routes/notion";
 import jiraRoutes from "./routes/jira";
-import { initializeCollections } from "./data/memoryStore";
+import { initializeCollections } from "./data/chroma";
 import { storeMemory, retrieveMemory } from "./agents/memoryAgent";
 import { logger } from "./utils/logger";
 dotenv.config();
@@ -16,8 +16,9 @@ const PORT = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(express.json());
+app.disable("x-powered-by");
 
-// Rate limiting (basic)
+// Rate limit all routes
 const limiter = rateLimit({ windowMs: 60_000, max: 120 });
 app.use(limiter);
 
@@ -38,12 +39,12 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok", service: "syntra-backend", time: new Date().toISOString() });
 });
 
-// Core ingestion routes
+
 app.use("/api/slack", slackRoutes);
 app.use("/api/notion", notionRoutes);
 app.use("/api/jira", jiraRoutes);
 
-// Simple memory test endpoints
+
 app.post("/api/memory", async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "text required" });
@@ -69,5 +70,12 @@ initializeCollections()
     logger.error("Failed to init collections", err);
     process.exit(1);
   });
+
+// Error handler (after routes)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  logger.error("Unhandled error", { message: err?.message, stack: err?.stack });
+  res.status(500).json({ error: "internal_error" });
+});
 
 export default app;

@@ -2,8 +2,7 @@ import { ChromaClient } from "chromadb";
 
 // Simple HTTP client configuration for ChromaDB server
 export const chroma = new ChromaClient({
-  host: process.env.CHROMA_HOST || "localhost",
-  port: parseInt(process.env.CHROMA_PORT || "8000")
+  path: `http://${process.env.CHROMA_HOST || "localhost"}:${process.env.CHROMA_PORT || "8001"}`
 });
 
 // Initialize collections

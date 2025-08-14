@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   chromadb:
     image: ghcr.io/chroma-core/chroma:latest
@@ -10,4 +9,3 @@ services:
       - ANONYMIZED_TELEMETRY=${ANONYMIZED_TELEMETRY:-TRUE}
     volumes:
       - ./data/chroma-store:/chroma/chroma
-    command: "--workers 1 --host 0.0.0.0 --port 8000 --proxy-headers --log-config chromadb/log_config.yml"
