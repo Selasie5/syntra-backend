@@ -1,9 +1,19 @@
 import { WebClient } from "@slack/web-api";
 
-const slackToken = process.env.SLACK_BOT_TOKEN;
-const defaultChannel = process.env.SLACK_DEFAULT_CHANNEL; // e.g., C123...
 let client: WebClient | null = null;
-if (slackToken) client = new WebClient(slackToken);
+let defaultChannel: string | undefined = undefined;
+
+function ensureClient() {
+  if (!client) {
+    const token = process.env.SLACK_BOT_TOKEN;
+    if (!token) return null;
+    client = new WebClient(token);
+  }
+  if (!defaultChannel) {
+    defaultChannel = process.env.SLACK_DEFAULT_CHANNEL;
+  }
+  return client;
+}
 
 type NudgeParams = { user?: string; channel?: string; message: string };
 
@@ -16,7 +26,7 @@ function isUserId(id?: string) {
 }
 
 export const sendSlackNudge = async ({ user, channel, message }: NudgeParams) => {
-  if (!client) {
+  if (!ensureClient()) {
     console.log(`[Slack Nudge][dry-run] ${channel ? channel : user ? `to ${user}` : "(no target)"}: ${message}`);
     return;
   }
@@ -29,7 +39,7 @@ export const sendSlackNudge = async ({ user, channel, message }: NudgeParams) =>
       // ok as-is
     } else if (isUserId(user)) {
       // Open DM channel with the user
-      const open = await client.conversations.open({ users: user! });
+  const open = await client!.conversations.open({ users: user! });
       targetChannel = open.channel?.id ?? undefined;
     } else if (defaultChannel && isChannelId(defaultChannel)) {
       targetChannel = defaultChannel;
@@ -41,9 +51,10 @@ export const sendSlackNudge = async ({ user, channel, message }: NudgeParams) =>
       return;
     }
 
-    await client.chat.postMessage({ channel: targetChannel, text: message });
+  await client!.chat.postMessage({ channel: targetChannel, text: message });
     console.log(`[Slack Nudge][sent] -> ${targetChannel}`);
-  } catch (e) {
-    console.error("[Slack] Failed to send nudge", e);
+  } catch (e: any) {
+    const data = e?.data || {};
+    console.error("[Slack] Failed to send nudge", { error: e?.message, code: data?.error, response: data });
   }
 };

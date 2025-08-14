@@ -40,7 +40,7 @@ export const handleDetection = async (event: RawEvent):Promise<ChaosSignal[]> =>
         type: "unanswered_question",
         source: "slack",
         summary: `Potential question from ${event.payload.user}: "${text}"`,
-  metadata: { user: event.payload.user, text, channel: event.payload.channel },
+  metadata: { user: event.payload.user, text, originalText: event.payload.text, channel: event.payload.channel },
       });
       logChaosSignal(signals[signals.length - 1]);
     }
