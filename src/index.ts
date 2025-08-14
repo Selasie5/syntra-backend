@@ -15,7 +15,12 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.use(cors());
-app.use(express.json());
+// Capture raw body for Slack signature verification while still parsing JSON
+app.use(express.json({
+  verify: (req: any, _res, buf) => {
+    try { req.rawBody = buf.toString("utf8"); } catch { /* noop */ }
+  },
+}));
 app.disable("x-powered-by");
 
 // Rate limit all routes

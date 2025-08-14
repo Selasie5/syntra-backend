@@ -58,3 +58,16 @@ export const sendSlackNudge = async ({ user, channel, message }: NudgeParams) =>
     console.error("[Slack] Failed to send nudge", { error: e?.message, code: data?.error, response: data });
   }
 };
+
+export async function getThreadReplyCount(channel: string, ts: string): Promise<number> {
+  if (!ensureClient()) return 0;
+  try {
+    const res: any = await client!.conversations.replies({ channel, ts, limit: 100 });
+    const msgs = Array.isArray(res?.messages) ? res.messages : [];
+    return msgs.length;
+  } catch (e: any) {
+    const data = e?.data || {};
+    console.error("[Slack] Failed to fetch replies", { error: e?.message, code: data?.error, response: data });
+    return 0;
+  }
+}
