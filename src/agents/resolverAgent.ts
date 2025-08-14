@@ -6,8 +6,9 @@ import { logResolution } from "../utils/chaosFeed";
 export const handleResolution = async (signal: ChaosSignal) => {
   switch (signal.type) {
     case "unanswered_question":
-  await sendSlackNudge({
+      await sendSlackNudge({
         user: signal.metadata?.user,
+        channel: signal.metadata?.channel,
         message: `👋 Just a heads-up: Your question might need a follow-up.\n"${signal.metadata?.text}"`,
       });
   logResolution(`Sent slack nudge to ${signal.metadata?.user}`);

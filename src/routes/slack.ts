@@ -4,13 +4,13 @@ import { handleListenerEvent } from "../agents/listenerAgent";
 const router = Router();
 
 
-router.post("/", async(req, res) => {
- const{ user, text} = req.body;
- 
+router.post("/", async (req, res) => {
+  const { user, text, channel } = req.body;
+
   const event = {
     source: "slack" as const,
     type: "message" as const,
-    payload: { user, text }
+    payload: { user, text, channel },
   };
 
   await handleListenerEvent(event);

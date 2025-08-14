@@ -32,7 +32,7 @@ export const handleDetection = async (event: RawEvent):Promise<ChaosSignal[]> =>
   const signals: ChaosSignal[] = [];
   if(event.source === "slack" && event.type === "message")
   {
-    const text = event.payload.text?.toLowerCase() || "";
+  const text = event.payload.text?.toLowerCase() || "";
 
     if(text.includes("?")&& !text.includes("thank you") && !text.includes("fyi"))
     {
@@ -40,7 +40,7 @@ export const handleDetection = async (event: RawEvent):Promise<ChaosSignal[]> =>
         type: "unanswered_question",
         source: "slack",
         summary: `Potential question from ${event.payload.user}: "${text}"`,
-        metadata: { user: event.payload.user, text },
+  metadata: { user: event.payload.user, text, channel: event.payload.channel },
       });
       logChaosSignal(signals[signals.length - 1]);
     }

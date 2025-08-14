@@ -24,7 +24,9 @@ app.use(limiter);
 
 // Simple HMAC signature verification middleware
 const SHARED_SECRET = process.env.INGEST_SECRET;
+const DISABLE_SIG = String(process.env.DISABLE_INGEST_SIGNATURE).toLowerCase() === "true";
 app.use((req, res, next) => {
+  if (DISABLE_SIG) return next(); // disabled explicitly
   if (!SHARED_SECRET) return next(); // disabled when unset
   const signature = req.header("x-syntra-signature");
   if (!signature) return res.status(401).json({ error: "missing signature" });
