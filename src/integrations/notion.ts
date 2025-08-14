@@ -15,7 +15,7 @@ export const addNotionComment = async ({ taskId, comment }: { taskId?: string, c
   }
   try {
     await notion.comments.create({
-      parent: { database_id: taskId },
+      parent: { page_id: taskId },
       rich_text: [{ type: "text", text: { content: comment } }],
     });
     console.log(`[Notion Comment][sent] ${taskId}`);

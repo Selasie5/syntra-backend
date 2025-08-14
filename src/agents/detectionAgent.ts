@@ -1,13 +1,21 @@
 import { logChaosSignal } from "../utils/chaosFeed";
 import { ChatOpenAI } from "@langchain/openai";
 
-const llm = process.env.OPENAI_API_KEY ? new ChatOpenAI({ model: process.env.CHAOS_MODEL || "gpt-4o-mini" }) : null;
+let llm: ChatOpenAI | null = null;
+function ensureLLM(): ChatOpenAI | null {
+  if (!llm && process.env.OPENAI_API_KEY) {
+    llm = new ChatOpenAI({ model: process.env.CHAOS_MODEL || "gpt-4o-mini" });
+  }
+  return llm;
+}
 
 async function classifyTone(text: string): Promise<string | null> {
   if (!llm) return null;
+  const model = ensureLLM();
+  if (!model) return null;
   try {
-    const prompt = `Classify if the following message indicates confusion/uncertainty. Reply with CONFUSED or CLEAR.\nMessage: ${text}`;
-    const res = await llm.invoke(prompt as any);
+    const prompt = `Classify if the following message indicates confusion/uncertainty. Reply with CONFUSED or CLEAR. Message: ${text}`;
+    const res = await model.invoke(prompt as any);
     const content = (res as any).content?.toString().toUpperCase() || "";
     return content.includes("CONFUSED") ? "confused" : "clear";
   } catch {
@@ -32,7 +40,7 @@ export const handleDetection = async (event: RawEvent):Promise<ChaosSignal[]> =>
   const signals: ChaosSignal[] = [];
   if(event.source === "slack" && event.type === "message")
   {
-    const text = event.payload.text?.toLowerCase() || "";
+  const text = event.payload.text?.toLowerCase() || "";
 
     if(text.includes("?")&& !text.includes("thank you") && !text.includes("fyi"))
     {
@@ -40,7 +48,7 @@ export const handleDetection = async (event: RawEvent):Promise<ChaosSignal[]> =>
         type: "unanswered_question",
         source: "slack",
         summary: `Potential question from ${event.payload.user}: "${text}"`,
-        metadata: { user: event.payload.user, text },
+  metadata: { user: event.payload.user, text, originalText: event.payload.text, channel: event.payload.channel },
       });
       logChaosSignal(signals[signals.length - 1]);
     }
