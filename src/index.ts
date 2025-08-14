@@ -32,14 +32,29 @@ app.use(express.urlencoded({
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
+// Minimal request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    logger.info("http", {
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      durationMs: Date.now() - start,
+      slackSigned: Boolean(req.header("x-slack-signature")),
+    });
+  });
+  next();
+});
+
 // Rate limit all routes
 const limiter = rateLimit({
   windowMs: 60_000,
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
-  // Do not rate-limit Slack URL verification & events
-  skip: (req) => req.path?.startsWith?.("/api/slack/events") === true,
+  // Do not rate-limit Slack-signed requests (verification & events)
+  skip: (req) => Boolean(req.header("x-slack-signature")) || req.path?.startsWith?.("/api/slack/events") === true,
 });
 app.use(limiter);
 

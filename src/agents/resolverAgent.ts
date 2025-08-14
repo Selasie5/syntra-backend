@@ -5,7 +5,14 @@ import { logResolution } from "../utils/chaosFeed";
 import { ChatOpenAI } from "@langchain/openai";
 import { retrieveMemory } from "./memoryAgent";
 
-const llm = process.env.OPENAI_API_KEY ? new ChatOpenAI({ model: process.env.CHAOS_MODEL || "gpt-4o-mini" }) : null;
+let llm: ChatOpenAI | null = null;
+function ensureLLM(): ChatOpenAI | null {
+  // Lazy init to ensure dotenv has loaded
+  if (!llm && process.env.OPENAI_API_KEY) {
+    llm = new ChatOpenAI({ model: process.env.CHAOS_MODEL || "gpt-4o-mini" });
+  }
+  return llm;
+}
 
 async function getMemoryContext(query: string): Promise<string> {
   try {
@@ -21,12 +28,19 @@ async function getMemoryContext(query: string): Promise<string> {
 
 async function answerQuestion(question: string): Promise<string> {
   const context = await getMemoryContext(question);
-  if (!llm) return "I noticed your question. A teammate will follow up shortly.";
+  const model = ensureLLM();
+  if (!model) return "I noticed your question. A teammate will follow up shortly.";
   const messages: any = [
     {
       role: "system",
-      content:
-        "You are Syntra's engineering assistant. Answer concisely and helpfully, using provided context when relevant. If information is missing, state brief assumptions. Do not include prefixes like 'Q:' or 'A:'—just provide the answer.",
+      content: [
+        "You are Syntra's engineering assistant.",
+        "- Give a concise, actionable answer first.",
+        "- Use provided context when relevant.",
+        "- If information is missing or ambiguous, ask up to 2 short clarifying follow-up questions.",
+        "- Prefer bullet points for steps.",
+        "- Do not include prefixes like 'Q:' or 'A:'—just write the answer, then a 'Follow-ups:' list if needed.",
+      ].join("\n"),
     },
   ];
   if (context) {
@@ -35,7 +49,7 @@ async function answerQuestion(question: string): Promise<string> {
   messages.push({ role: "user", content: question });
 
   try {
-    const res: any = await llm.invoke(messages);
+    const res: any = await model.invoke(messages);
     const text = String(res?.content || "").trim();
     return text || "I don't have enough context to answer right now.";
   } catch {
